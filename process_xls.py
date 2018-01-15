@@ -6,17 +6,16 @@ import os
 import xlrd
 
 from datetime import datetime
-from utils import Utils,Adapter
+from utils import Utils
+from adapter import Adapter
+from collections import defaultdict
 
-"""
-http://www.sema.mt.gov.br/attachments/article/3318/Embargos%20CFF%202010_2017_1.xls
-http://www.icmbio.gov.br/portal/images/stories/areas_embargadas/Embargos_ICMBio.xlsx
-"""
 class Xls:
 
     utils        = None
     adapter      = None
     current_date = None
+    xls_file_instance = None
 
     def __init__(self):
         self.utils        = Utils()
@@ -60,8 +59,8 @@ class Xls:
         try:
             response = requests.get(url)
         except Exception as ex:
-            self.utils.message_and_stop_script(
-                ex,'Erro ao baixar o arquivo {}.xls'.format(file_name)
+            self.utils.error_message_and_stop_script(
+                'Erro ao baixar o arquivo {}.xls'.format(file_name),ex
             )
 
         self.create_and_write_xls(file_name,response)
@@ -80,8 +79,13 @@ class Xls:
         self.download_and_create_xls('icmbio',url_icmbio)
 
     def read_xls(self,path_xls_file,is_icmbio_xls=False,is_sema_xls=False):
-        xls_file_instance = xlrd.open_workbook(path_xls_file)
-        sheets            = xls_file_instance.sheets()
+        """
+        Funcao que le o arquivo xls e retorna os dados. Caso o xls seja do sema sera
+        retornado todos os dados em lista dividido por folha, e caso o xls seja o icmbio todos
+        os dados serao retornados apenas um lista  
+        """
+        self.xls_file_instance = xlrd.open_workbook(path_xls_file)
+        sheets            = self.xls_file_instance.sheets()
         xls_data          = []
         sheet_data_sema   = []
         # removendo a segunda folha do xls icbio pois
@@ -122,7 +126,7 @@ class Xls:
 
         if xls_data[0].count('') > 5:
             xls_data.pop(0)
-
+        
         # obtendo o indice de cada coluna
         for index_column in range(len(xls_data[0])):
             columns_name_with_index[xls_data[0][index_column]] = index_column 
@@ -134,16 +138,65 @@ class Xls:
         return (columns_name_with_index,xls_data)
 
     def get_sema(self):
-        path_xls_file = 'file/xls_{}/sema_{}.xls'.format(
+        """
+        Funcao que obtem os dados dos xls sema divididos por folha.
+        Esta funcao tambem pega os nomes das colunas e formata para nomes
+        padronizados, tambem dividido por folha
+        """
+        path_xls_file    = 'file/xls_{}/sema_{}.xls'.format(
             self.current_date,self.current_date
         )
-        sheet_data_sema = self.read_xls(path_xls_file,is_sema_xls=True)
-        
+        sheets_data_sema         = self.read_xls(path_xls_file,is_sema_xls=True)
+        columns_name_with_index  = []
+        sheet_index              = 0
+        controller_index_removed = 0
+
+        # a variavel "controller_index_removed" e necesaria para que seja calculado seu 
+        # valor com o indice de cada linha de uma folha para manter o indice no item correto
+
         """
-        Tratar os dados da folha de dados sema
+        Este loop remove as duas primeiras linhas do xls que sao apenas
+        titulos irrelevantes para a carga, e este loop tambem obtem o nome
+        das colunas e adiciona na variavel "columns_name_with_index" junto
+        com o indice da coluna para facilitar a identificacao dos dados
+        na iteracao de todos os registros
         """
-        return sheet_data_sema
+        for sheet in sheets_data_sema:
+            controller_index_removed = 0
+            sheet_index = sheets_data_sema.index(sheet)
+
+            for index in range(len(sheet)):
+                # este calculo ocorre para manter o indice no item certo,
+                # isto e necessario devido a remocao de um item na lista 
+                index -= controller_index_removed
+
+                if index < 3 and sheet[index].count('') > 6:
+                    # Este if remove as primeira linhas irrelevantes para a carga
+                    sheets_data_sema[sheet_index].pop(index)
+                    controller_index_removed += 1
+                    continue
+
+                if index == 0:
+                    # Este if obtem o nome das colunas de cada folha do xls
+                    # e insere em uma lista de dicionarios e depois remove a
+                    # linha dos nomes das colunas para que fique apenas os dados.
+                    columns_name_with_index.append({})
+
+                    for index_item_row in range(len(sheet[index])):
+                        columns_name_with_index[sheet_index][
+                            sheet[index][index_item_row]
+                        ] = index_item_row
+
+                    sheets_data_sema[sheet_index].pop(0)
+       
+        columns_name_with_index = self.adapter.column_name_index_sema(
+            columns_name_with_index,os.path.basename(path_xls_file)
+        )
+        sheets_data_sema = self.adapter.convert_date_sema(
+            sheets_data_sema,columns_name_with_index,self.xls_file_instance
+        )
+        return sheets_data_sema
 
 
 if __name__ == '__main__':
-    print(Xls().get_sema())
+    Xls().get_sema()
