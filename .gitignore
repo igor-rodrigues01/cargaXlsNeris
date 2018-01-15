@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+
+#Exclude everything
+file/* 
+
+#Exception this file
+!file/.gitkeep

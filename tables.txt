@@ -1,0 +1,45 @@
+create table sema(
+    id serial primary key,
+	num_identificacao text,
+	data_lavratura timestamp,
+	desc_fato text,
+	id_processo_administrativo text,
+	nom_propriedade text,
+	nom_proprietario text,
+	cpf text,
+	geom geometry(point,4674),
+	area text,
+	exploracao text,
+	desmate_app text,
+	desmate_total text,
+	queimada text,
+	classificacao_area text
+);
+
+
+insert into sema(
+	num_identificacao, data_lavratura, desc_fato,
+	id_processo_administrativo, nom_propriedade,
+	nom_proprietario, cpf, geom, area, exploracao,
+	desmate_app, desmate_total, queimada,classificacao_area) 
+	values('001','2018-01-12','desc test','400/100','TESTE','jao','11122233344',st_setsrid(ST_MakePoint(-71.1043443253471, 42.3150676015829),4674),'12.333','teste explo','test desmate','desmate total test','queimada test','ARL')
+
+create table icmbio(
+	num_auto_infracao text,
+	serie text,
+	cpfj text,
+	autuado text,
+	desc_infracao text,
+	art_1 text,
+	art_2 text,
+	tipo_infracao text,
+	nome_uc text,
+	cnuc text,
+	municipio text,
+	uf text,
+	data_auto timestamp,
+	obs_embargo text,
+	area text,
+	num_processo text
+	
+);
