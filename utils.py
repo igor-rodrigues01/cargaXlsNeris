@@ -6,7 +6,7 @@ class Utils:
         if not exception_msg:
             print('\n{}\n'.format(custom_msg))
         else:
-            print('\nError: {}\n\n{}\n'.format(exception_msg,custom_msg))
+            print('\n{}\n{}\n'.format(exception_msg,custom_msg))
 
         sys.exit()
 

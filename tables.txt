@@ -1,12 +1,19 @@
+
+FAZER:
+	- remover os zeros que estao no final do numeros lidos
+		- antes disso verificar se este zero esta aparecendo quando acontece a leitura do 
+		xls ou quando ja está na base de dados
+    
+    - colocar a condicao inversa caso o nome das colunas não esteja no padrão de nomes
+
 create table sema(
-    id serial primary key,
-	num_identificacao text,
-	data_lavratura timestamp,
-	desc_fato text,
-	id_processo_administrativo text,
-	nom_propriedade text,
-	nom_proprietario text,
-	cpf text,
+    num_identificacao varchar(80),
+	dt_lavratura date,
+	desc_sucinta_fato text,
+	id_processo_administrativo varchar(50),
+	nom_propriedade varchar(80),
+	nom_proprietario varchar(100),
+	cpf varchar(30),
 	geom geometry(point,4674),
 	area text,
 	exploracao text,
@@ -16,28 +23,21 @@ create table sema(
 	classificacao_area text
 );
 
-
-insert into sema(
-	num_identificacao, data_lavratura, desc_fato,
-	id_processo_administrativo, nom_propriedade,
-	nom_proprietario, cpf, geom, area, exploracao,
-	desmate_app, desmate_total, queimada,classificacao_area) 
-	values('001','2018-01-12','desc test','400/100','TESTE','jao','11122233344',st_setsrid(ST_MakePoint(-71.1043443253471, 42.3150676015829),4674),'12.333','teste explo','test desmate','desmate total test','queimada test','ARL')
-
 create table icmbio(
-	num_auto_infracao text,
+	id int,
+	num_auto_infracao varchar(50),
 	serie text,
-	cpfj text,
+	cpfj varchar(50),
 	autuado text,
 	desc_infracao text,
 	art_1 text,
 	art_2 text,
 	tipo_infracao text,
 	nome_uc text,
-	cnuc text,
+	cnuc varchar(50),
 	municipio text,
 	uf text,
-	data_auto timestamp,
+	dt_auto date,
 	obs_embargo text,
 	area text,
 	num_processo text

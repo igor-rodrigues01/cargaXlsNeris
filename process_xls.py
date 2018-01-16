@@ -88,6 +88,7 @@ class Xls:
         sheets            = self.xls_file_instance.sheets()
         xls_data          = []
         sheet_data_sema   = []
+        row               = None
         # removendo a segunda folha do xls icbio pois
         # ela contem apenas um coluna de dados
         if is_icmbio_xls:
@@ -100,9 +101,12 @@ class Xls:
                 xls_data = []
             
             for row_number in range(sheet.nrows):
-                xls_data.append(
-                    sheet.row_values(row_number)                    
-                )
+                # este if serve para que nao seja adicionado linhas totalmente em branco
+                if sheet.row_values(row_number).count('') != len(sheet.row_values(row_number)):
+                    row = self.adapter.remove_simple_quotes(
+                        sheet.row_values(row_number)
+                    ) 
+                    xls_data.append(row)
             # adicionando uma folha
             if is_sema_xls and not xls_data == []:
                 sheet_data_sema.append(xls_data)
@@ -112,7 +116,6 @@ class Xls:
         else:
             return sheet_data_sema
             
-
     def get_icmbio(self):
         """
         Funcao que obtem os dados do xls icmbio e chama a funcao que
@@ -132,9 +135,13 @@ class Xls:
             columns_name_with_index[xls_data[0][index_column]] = index_column 
         
         xls_data.pop(0)
-        columns_name_with_index = self.adapter.column_name_index(
+        columns_name_with_index = self.adapter.column_name_index_icmbio(
             columns_name_with_index
         )
+        xls_data = self.adapter.convert_date_icmbio(
+            xls_data,columns_name_with_index,self.xls_file_instance
+        )
+
         return (columns_name_with_index,xls_data)
 
     def get_sema(self):
@@ -147,10 +154,9 @@ class Xls:
             self.current_date,self.current_date
         )
         sheets_data_sema         = self.read_xls(path_xls_file,is_sema_xls=True)
-        columns_name_with_index  = []
-        sheet_index              = 0
-        controller_index_removed = 0
-
+        columns_name_with_index             = []
+        sheet_index                         = 0
+        controller_index_removed            = 0
         # a variavel "controller_index_removed" e necesaria para que seja calculado seu 
         # valor com o indice de cada linha de uma folha para manter o indice no item correto
 
@@ -188,14 +194,17 @@ class Xls:
                         ] = index_item_row
 
                     sheets_data_sema[sheet_index].pop(0)
-       
+
+                if index > 5:
+                    break
+
         columns_name_with_index = self.adapter.column_name_index_sema(
             columns_name_with_index,os.path.basename(path_xls_file)
         )
         sheets_data_sema = self.adapter.convert_date_sema(
             sheets_data_sema,columns_name_with_index,self.xls_file_instance
         )
-        return sheets_data_sema
+        return (columns_name_with_index,sheets_data_sema)
 
 
 if __name__ == '__main__':
