@@ -8,7 +8,6 @@ import xlrd
 from datetime import datetime
 from utils import Utils
 from adapter import Adapter
-from collections import defaultdict
 
 class Xls:
 
@@ -18,12 +17,12 @@ class Xls:
     xls_file_instance = None
 
     def __init__(self):
-        self.utils        = Utils()
-        self.adapter      = Adapter()
-        self.current_date = datetime.now().strftime("%Y-%m-%d")
-
-        self.create_directory('file')
-        self.get_xls()
+        self.utils          = Utils()
+        self.adapter        = Adapter()
+        self.current_date   = datetime.now().strftime("%Y-%m-%d")
+        self.files_dir_name = 'file'
+        
+        self.make_xls_file()
 
     def create_directory(self,dir_name):
         """
@@ -38,9 +37,9 @@ class Xls:
         Funcao que veririca se o xls existe, caso nao existir sera criado o xls
         e sera escrito o conteudo da requisicao. 
         """
-        dir_name     = 'file/xls_{}'.format(self.current_date)
-        self.create_directory(dir_name)
-        file_name    = '{}/{}_{}.xls'.format(dir_name,file_name,self.current_date)
+        full_dir_name     = '{}/xls_{}'.format(self.files_dir_name,self.current_date)
+        self.create_directory(full_dir_name)
+        file_name    = '{}/{}_{}.xls'.format(full_dir_name,file_name,self.current_date)
         
         if os.path.exists(file_name):
             os.remove(file_name)
@@ -54,20 +53,23 @@ class Xls:
 
     def download_and_create_xls(self,file_name,url):
         """
-        Funcao que baixa o xls no site www.sema.mt.gov.br
+        Funcao que baixa o xls e chama a funcao para criar o arquivo na maquina
         """
         try:
+            print('Downloading file {}_{}.xls'.format(file_name,self.current_date))
             response = requests.get(url)
         except Exception as ex:
             self.utils.error_message_and_stop_script(
-                'Erro ao baixar o arquivo {}.xls'.format(file_name),ex
+                'Erro ao baixar o arquivo {}_{}.xls'.format(file_name,self.current_date),ex
             )
+        else:
+            print('{}_{}.xls downloaded with success\n'.format(file_name,self.files_dir_name))
 
         self.create_and_write_xls(file_name,response)
 
-    def get_xls(self):
+    def make_xls_file(self):
         """
-        Funcao que executa a funcao de download do xls e criacao do mesmo
+        Funcao que executa a funcao de download do xls e criacao do xls
         """
         url_sema   = 'http://www.sema.mt.gov.br/'\
         'attachments/article/3318/Embargos%20CFF%202010_2017_1.xls'
@@ -105,7 +107,8 @@ class Xls:
                 if sheet.row_values(row_number).count('') != len(sheet.row_values(row_number)):
                     row = self.adapter.remove_simple_quotes(
                         sheet.row_values(row_number)
-                    ) 
+                    )
+                    row = self.adapter.remove_last_zero_in_int(row) 
                     xls_data.append(row)
             # adicionando uma folha
             if is_sema_xls and not xls_data == []:
@@ -121,22 +124,30 @@ class Xls:
         Funcao que obtem os dados do xls icmbio e chama a funcao que
         formata o nome das colunas com nomes padronizados
         """
-        path_xls_file = 'file/xls_{}/icmbio_{}.xls'.format(
-            self.current_date,self.current_date
+        path_xls_file = '{}/xls_{}/icmbio_{}.xls'.format(
+            self.files_dir_name,self.current_date,self.current_date
         )
         xls_data = self.read_xls(path_xls_file,is_icmbio_xls=True)
         columns_name_with_index = {}
 
-        if xls_data[0].count('') > 5:
-            xls_data.pop(0)
+        for index in range(len(xls_data)):
+            
+            if xls_data[index].count('') > 5:
+                xls_data.pop(index)
+           
+            if index == 1:
+                break
         
         # obtendo o indice de cada coluna
         for index_column in range(len(xls_data[0])):
             columns_name_with_index[xls_data[0][index_column]] = index_column 
         
+        # Removendo a primeira lista que contem o nome das colunas e deixando
+        # apenas os dados prontos para serem processados 
         xls_data.pop(0)
+        
         columns_name_with_index = self.adapter.column_name_index_icmbio(
-            columns_name_with_index
+            columns_name_with_index,os.path.basename(path_xls_file)
         )
         xls_data = self.adapter.convert_date_icmbio(
             xls_data,columns_name_with_index,self.xls_file_instance
@@ -150,13 +161,13 @@ class Xls:
         Esta funcao tambem pega os nomes das colunas e formata para nomes
         padronizados, tambem dividido por folha
         """
-        path_xls_file    = 'file/xls_{}/sema_{}.xls'.format(
-            self.current_date,self.current_date
+        path_xls_file    = '{}/xls_{}/sema_{}.xls'.format(
+            self.files_dir_name,self.current_date,self.current_date
         )
         sheets_data_sema         = self.read_xls(path_xls_file,is_sema_xls=True)
-        columns_name_with_index             = []
-        sheet_index                         = 0
-        controller_index_removed            = 0
+        columns_name_with_index  = []
+        sheet_index              = 0
+        controller_index_removed = 0
         # a variavel "controller_index_removed" e necesaria para que seja calculado seu 
         # valor com o indice de cada linha de uma folha para manter o indice no item correto
 
@@ -206,6 +217,3 @@ class Xls:
         )
         return (columns_name_with_index,sheets_data_sema)
 
-
-if __name__ == '__main__':
-    Xls().get_sema()

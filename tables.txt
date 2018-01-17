@@ -1,12 +1,4 @@
-
-FAZER:
-	- remover os zeros que estao no final do numeros lidos
-		- antes disso verificar se este zero esta aparecendo quando acontece a leitura do 
-		xls ou quando ja está na base de dados
-    
-    - colocar a condicao inversa caso o nome das colunas não esteja no padrão de nomes
-
-create table sema(
+create table embargos.sema(
     num_identificacao varchar(80),
 	dt_lavratura date,
 	desc_sucinta_fato text,
@@ -23,8 +15,8 @@ create table sema(
 	classificacao_area text
 );
 
-create table icmbio(
-	id int,
+create table embargos.icmbio(
+	id varchar(15),
 	num_auto_infracao varchar(50),
 	serie text,
 	cpfj varchar(50),

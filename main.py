@@ -17,10 +17,13 @@ class Main:
         columns_name_sema,sheets_data_sema  = self.xls.get_sema()
         columns_name_icmbio,xls_data_icmbio = self.xls.get_icmbio()
         
+        self.dao.truncate_sema()
+        self.dao.truncate_icmbio()
         self.dao.execute_insert_in_sema_and_icmbio(
             columns_name_sema,sheets_data_sema,
             columns_name_icmbio,xls_data_icmbio
         )
+        self.dao.close_connection()
 
 if __name__ == '__main__':
     Main().main()

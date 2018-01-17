@@ -11,9 +11,33 @@ class Adapter:
     def __init__(self):
         self.utils = Utils()
 
+    def remove_last_zero_in_int(self,row_data_xls):
+        """
+        Funcao que remove o ".0" no final dos numeros inteiros lidos pela
+        lib xrld 
+        """
+        index_current_cell = 0
+
+        for cell in row_data_xls:
+            if isinstance(cell,float):
+                index_current_cell = row_data_xls.index(cell)
+                cell               = str(cell)
+                
+                if cell.endswith('.0'):
+                    cell = cell[:-1]
+                    cell = cell[:-1]
+                    row_data_xls[index_current_cell] = cell
+
+                if not cell.startswith('0') and cell.find('.') == -1:
+                    row_data_xls[index_current_cell] = int(cell)
+                    
+        return row_data_xls
+
     def convert_date_sema(self,sheets,columns_name_index,xls_file_instance): 
-        """ Convertendo a data lida em objeto datetime"""
-        
+        """
+        Convertendo a data lida no xls sema em objeto datetime 
+        e pegando apenas a data
+        """
         index_sheet = 0
         date_obj    = None
 
@@ -30,7 +54,10 @@ class Adapter:
         return sheets
 
     def convert_date_icmbio(self,xls_data,columns_name_index,xls_file_instance):
-
+        """
+        Convertendo a data lida no xls icmbio em objeto datetime
+        e pegando apenas a data
+        """
         index_date = columns_name_index['dt_auto']
         date_obj   = None
         
@@ -48,7 +75,10 @@ class Adapter:
         return xls_data
 
     def remove_simple_quotes(self,row):
-        
+        """
+        Funcao que troca 1 aspas simples por 2 aspas simples para que o dado
+        seja aceito na base de dados 
+        """
         index = 0
 
         for item in row:
@@ -59,17 +89,15 @@ class Adapter:
 
         return row
 
-    def column_name_index_icmbio(self,dict_column_name_index):
+    def column_name_index_icmbio(self,dict_column_name_index,file_name):
         """
-        Funcao que ira verificar a nomenclatura dos
-        nomes das colunas e adaptalos em um nome padrao.
-        Esta funcao e util caso ocorra alguma mudanca no
-        nome das colunas do xls
+        Funcao que ira verificar a nomenclatura das colunas no
+        xls icmbio e adaptalos em um nome padrao. Esta funcao e util caso
+        ocorra alguma mudanca no nome das colunas do xls.
         """
         new_key              = None
         new_dict_with_column = {}
 
-        # for index in range(len(dict_column_name_index))
         for key,value in dict_column_name_index.items():
             new_key = None
             
@@ -170,11 +198,22 @@ class Adapter:
               or key.lower() == 'n do processo':
                 new_key = 'num_processo'
                 new_dict_with_column[new_key] = value
-            
+        
+            else:
+                self.utils.error_message_and_stop_script(
+                    'Error: A coluna com o nome "{}" é nova e não consta nos'\
+                    ' padrões de nome de coluna do script.\n Verifique o nome'\
+                    ' das colunas no arquivo {}'.format(key,file_name)
+                )
+        
         return new_dict_with_column
 
-    def column_name_index_sema(self,list_dict_column_name_index,xls_file_name):
-
+    def column_name_index_sema(self,list_dict_column_name_index,file_name):
+        """
+        Funcao que ira verificar a nomenclatura das colunas no xls sema e 
+        adaptalos em um nome padrao. Esta funcao e util caso ocorra alguma
+        mudanca no nome das colunas do xls.
+        """
         new_key              = None
         index_dict           = 0
         new_list_dict_with_column = []  
@@ -280,7 +319,6 @@ class Adapter:
                     new_key = 'queimada'
                     new_list_dict_with_column[index_dict][new_key] = value
                     
-
                 elif key.lower() == 'classificação da área (15-17)'\
                   or key.lower() == 'classificacao da area (15-17)'\
                   or key.lower() == 'classific da área (15-17)'\
@@ -291,68 +329,14 @@ class Adapter:
                   or key.lower() == 'classific area (15-17)':
                     new_key = 'classific_area_15_17'
                     new_list_dict_with_column[index_dict][new_key] = value
+
+                else:
+                    self.utils.error_message_and_stop_script(
+                        'Error: A coluna com o nome "{}" é nova e não consta nos'\
+                        ' padrões de nome de coluna do script.\n Verifique o nome'\
+                        ' das colunas no arquivo {}'.format(key,file_name)
+                    )
                     
         return new_list_dict_with_column
 
-
-          # A razao pela qual esta sendo utilizado es
-                # elif key.lower() != 'numero de identificação'\
-                #   or key.lower() != 'numero de identificacao'\
-                #   or key.lower() != 'número de identificação'\
-                #   or key.lower() != 'num de identificação'\
-                #   or key.lower() != 'num de identificacao'\
-                #   or key.lower() != 'n de identificação'\
-                #   or key.lower() != 'n de identificacao'\
-                #   or key.lower() != 'data de lavratura'\
-                #   or key.lower() != 'dt de lavratura'\
-                #   or key.lower() != 'data lavratura'\
-                #   or key.lower() != 'descrição sucinta do fato'\
-                #   or key.lower() != 'descricao sucinta do fato'\
-                #   or key.lower() != 'desc sucinta do fato'\
-                #   or key.lower() != 'identificação do processo administrativo'\
-                #   or key.lower() != 'identificacao do processo administrativo'\
-                #   or key.lower() != 'identificação processo administrativo'\
-                #   or key.lower() != 'identificacao processo administrativo'\
-                #   or key.lower() != 'id do processo administrativo'\
-                #   or key.lower() != 'id processo administrativo'\
-                #   or key.lower() != 'nome da propriedade'\
-                #   or key.lower() != 'nome propriedade'\
-                #   or key.lower() != 'nom propriedade'\
-                #   or key.lower() != 'nome do possuidor/proprietário da área'\
-                #   or key.lower() != 'nome do possuidor/proprietario da area'\
-                #   or key.lower() != 'nome possuidor/proprietario da area'\
-                #   or key.lower() != 'nome possuidor/proprietario area'\
-                #   or key.lower() != 'nom do possuidor/proprietário da área'\
-                #   or key.lower() != 'nom do possuidor/proprietario da area'\
-                #   or key.lower() != 'nom possuidor/proprietario da area'\
-                #   or key.lower() != 'nom possuidor/proprietario area'\
-                #   or key.lower() != 'cpf'\
-                #   or key.lower() != 'x'\
-                #   or key.lower() != 'lat'\
-                #   or key.lower() != 'latitude'\
-                #   or key.lower() != 'y'\
-                #   or key.lower() != 'lng'\
-                #   or key.lower() != 'long'\
-                #   or key.lower() != 'longitude'\
-                #   or key.lower() != 'área (15-17)'\
-                #   or key.lower() != 'area (15-17)'\
-                #   or key.lower() != 'exploração (ha)'\
-                #   or key.lower() != 'exploracao (ha)'\
-                #   or key.lower() != 'desmate app (ha)'\
-                #   or key.lower() != 'desmate total'\
-                #   or key.lower() != 'queimada'\
-                #   or key.lower() != 'classificação da área (15-17)'\
-                #   or key.lower() != 'classificacao da area (15-17)'\
-                #   or key.lower() != 'classific da área (15-17)'\
-                #   or key.lower() != 'classific da area (15-17)'\
-                #   or key.lower() != 'classificação área (15-17)'\
-                #   or key.lower() != 'classificacao area (15-17)'\
-                #   or key.lower() != 'classific área (15-17)'\
-                #   or key.lower() != 'classific area (15-17)':
-                # else:
-                #     import pdb; pdb.set_trace()
-                    
-                    # self.error_message_and_stop_script(
-                    #     'O nome {} está fora dos padrões de nomes da tabela e do script.'
-                    # )
 

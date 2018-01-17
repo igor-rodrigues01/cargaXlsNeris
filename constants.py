@@ -1,5 +1,5 @@
-HOST     = '127.0.0.1'
-USER     = 'postgres'
-PASSWD   = '123456'
-SCHEMA   = 'public'
-DATABASE = 'teste'
+HOST     = '10.1.25.148'#10.1.25.148
+USER     = '11178422666'#11178422666
+PASSWD   = '111784'     #111784
+SCHEMA   = 'embargos'   #embargos
+DATABASE = 'devel'      #devel
