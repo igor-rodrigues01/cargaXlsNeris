@@ -86,7 +86,7 @@ class Xls:
         retornado todos os dados em lista dividido por folha, e caso o xls seja o icmbio todos
         os dados serao retornados apenas um lista  
         """
-        self.xls_file_instance = xlrd.open_workbook(path_xls_file)
+        self.xls_file_instance = xlrd.open_workbook(path_xls_file,formatting_info=True)
         sheets            = self.xls_file_instance.sheets()
         xls_data          = []
         sheet_data_sema   = []
@@ -95,7 +95,6 @@ class Xls:
         # ela contem apenas um coluna de dados
         if is_icmbio_xls:
             sheets = [sheets[0]]
-        
         for sheet in sheets:
             # este if serve para zerar os dados de uma folha e adicionar
             # os dados lidos de forma separada folha a folha na lista sheet_data_sema
@@ -118,6 +117,10 @@ class Xls:
             return xls_data
         else:
             return sheet_data_sema
+
+
+    def read_xls_2(self):
+        pass
             
     def get_icmbio(self):
         """

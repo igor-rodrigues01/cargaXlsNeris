@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 #-*-coding:utf-8-*-
 
+"""
+Para que este escript funcionasse de forma precisa, na lib xlrd para corrigir
+um problema de obtencao de formatacao das celulas na linha 793 do arquvivo
+/home/<user>/.virtualenvs/<EnvironmentName>/lib/python3.5/site-packages/xlrd/xlsx.py
+(ou um path equivalente que chegue no source code das lib's python) 
+foi alterado: "if formatting_info:" para "if not formatting_info:"
+
+"""
 from process_xls import Xls
 from dao import Dao
 
