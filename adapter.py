@@ -11,28 +11,64 @@ class Adapter:
     def __init__(self):
         self.utils = Utils()
 
-    def remove_last_zero_in_int(self,row_data_xls):
+    def get_cell_value_with_formatter(self,cell_obj,xls_file_instance):
+        """
+        Funcao que obtem uma celula com um valor numerico com o 0 a esquerda
+        e mantem este numero com esse 0 a esquerda
+        """
+        cell_with_formatter = None
+        xls_formatter_obj   = xls_file_instance.xf_list[cell_obj.xf_index]
+        formatter_str       = None
+
+        if xls_formatter_obj.format_key in xls_file_instance.format_map.keys():
+            formatter_str = xls_file_instance.format_map[xls_formatter_obj.format_key].format_str
+        
+            if cell_obj.ctype == xlrd.XL_CELL_NUMBER and all(x == '0' for x in formatter_str):
+                cell_with_formatter = '%0*d' % (len(formatter_str), int(cell_obj.value))
+                return cell_with_formatter
+            
+            else:
+                return cell_obj.value
+        else:
+            return cell_obj.value
+
+    def remove_last_zero_in_int(self,cell):
         """
         Funcao que remove o ".0" no final dos numeros inteiros lidos pela
         lib xrld 
         """
-        index_current_cell = 0
-
-        for cell in row_data_xls:
-            if isinstance(cell,float):
-                index_current_cell = row_data_xls.index(cell)
-                cell               = str(cell)
+        if isinstance(cell,float):
+            cell = str(cell)
+            
+            if cell.endswith('.0'):
+                cell = cell[:-1]
+                cell = cell[:-1]
                 
-                if cell.endswith('.0'):
-                    cell = cell[:-1]
-                    cell = cell[:-1]
-                    row_data_xls[index_current_cell] = cell
+            if not cell.startswith('0') and cell.find('.') == -1:
+                cell = int(cell)
+                
+        return cell
 
-                if not cell.startswith('0') and cell.find('.') == -1:
-                    row_data_xls[index_current_cell] = int(cell)
-                    
-        return row_data_xls
+    def remove_simple_quotes(self,cell):
+        """
+        Funcao que troca 1 aspas simples por 2 aspas simples para que o dado
+        seja aceito na base de dados 
+        """
+        if isinstance(cell,str):
+            if cell.find("'") != -1:
+                cell = cell.replace("'","''")
 
+        return cell
+
+    def adapter_cell_object_by_type(self,cell_obj,xls_file_instance):
+        """
+        Funcao que chava as funcoes de conversao de dados para cada celula
+        """
+        cell = self.get_cell_value_with_formatter(cell_obj,xls_file_instance)
+        cell = self.remove_simple_quotes(cell)
+        cell = self.remove_last_zero_in_int(cell)
+        return cell
+    
     def convert_date_sema(self,sheets,columns_name_index,xls_file_instance): 
         """
         Convertendo a data lida no xls sema em objeto datetime 
@@ -73,21 +109,6 @@ class Adapter:
                 xls_data[index][index_date] = 'null'  
 
         return xls_data
-
-    def remove_simple_quotes(self,row):
-        """
-        Funcao que troca 1 aspas simples por 2 aspas simples para que o dado
-        seja aceito na base de dados 
-        """
-        index = 0
-
-        for item in row:
-            if isinstance(item,str):
-                index = row.index(item)
-                if item.find("'") != -1:
-                    row[index] = item.replace("'","''")
-
-        return row
 
     def column_name_index_icmbio(self,dict_column_name_index,file_name):
         """

@@ -20,7 +20,8 @@ class Xls:
         self.utils          = Utils()
         self.adapter        = Adapter()
         self.current_date   = datetime.now().strftime("%Y-%m-%d")
-        self.files_dir_name = 'file'
+        dir_name            = os.path.dirname(__file__) 
+        self.files_dir_name = os.path.join(dir_name,'file')
         
         self.make_xls_file()
 
@@ -63,7 +64,7 @@ class Xls:
                 'Erro ao baixar o arquivo {}_{}.xls'.format(file_name,self.current_date),ex
             )
         else:
-            print('{}_{}.xls downloaded with success\n'.format(file_name,self.files_dir_name))
+            print('{}_{}.xls downloaded with success\n'.format(file_name,self.current_date))
 
         self.create_and_write_xls(file_name,response)
 
@@ -81,35 +82,49 @@ class Xls:
         self.download_and_create_xls('icmbio',url_icmbio)
 
     def read_xls(self,path_xls_file,is_icmbio_xls=False,is_sema_xls=False):
-        """
+        '''
         Funcao que le o arquivo xls e retorna os dados. Caso o xls seja do sema sera
-        retornado todos os dados em lista dividido por folha, e caso o xls seja o icmbio todos
-        os dados serao retornados apenas um lista  
-        """
+        retornado todos os dados em uma lista de lista dividido por folha, e caso o
+        xls seja o icmbio todos os dados serao retornados em apenas uma lista de lista  
+        '''
         self.xls_file_instance = xlrd.open_workbook(path_xls_file,formatting_info=True)
-        sheets            = self.xls_file_instance.sheets()
-        xls_data          = []
-        sheet_data_sema   = []
-        row               = None
+        sheets                 = self.xls_file_instance.sheets()
+        new_row                = []
+        sheet                  = []
+        sheet_data_sema        = []
+        cell_obj               = None
+        xls_data               = []
+    
         # removendo a segunda folha do xls icbio pois
         # ela contem apenas um coluna de dados
         if is_icmbio_xls:
             sheets = [sheets[0]]
+
         for sheet in sheets:
+            
+            cell_obj = None
+            
             # este if serve para zerar os dados de uma folha e adicionar
             # os dados lidos de forma separada folha a folha na lista sheet_data_sema
             if is_sema_xls:
                 xls_data = []
-            
-            for row_number in range(sheet.nrows):
-                # este if serve para que nao seja adicionado linhas totalmente em branco
-                if sheet.row_values(row_number).count('') != len(sheet.row_values(row_number)):
-                    row = self.adapter.remove_simple_quotes(
-                        sheet.row_values(row_number)
+
+            # iterando sobre as linhas
+            for row_index in range(sheet.nrows):
+                new_row = []
+                # iterando sobre as colunas
+                for col_index in range(sheet.ncols):
+                    cell_obj   = sheet.cell(row_index,col_index)
+                    cell_value = self.adapter.adapter_cell_object_by_type(
+                        cell_obj,self.xls_file_instance
                     )
-                    row = self.adapter.remove_last_zero_in_int(row) 
-                    xls_data.append(row)
-            # adicionando uma folha
+                    new_row.append(cell_value)
+                
+                # este if serve para que nao seja adicionado linhas totalmente em branco
+                if sheet.row_values(row_index).count('') != len(sheet.row_values(row_index)):
+                    xls_data.append(new_row)
+
+            # adicionando uma nova folha no xls sema
             if is_sema_xls and not xls_data == []:
                 sheet_data_sema.append(xls_data)
 
@@ -117,10 +132,6 @@ class Xls:
             return xls_data
         else:
             return sheet_data_sema
-
-
-    def read_xls_2(self):
-        pass
             
     def get_icmbio(self):
         """
@@ -219,4 +230,3 @@ class Xls:
             sheets_data_sema,columns_name_with_index,self.xls_file_instance
         )
         return (columns_name_with_index,sheets_data_sema)
-
